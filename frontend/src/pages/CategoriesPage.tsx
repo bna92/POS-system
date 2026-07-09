@@ -21,7 +21,7 @@ export default function CategoriesPage() {
   };
 
   useEffect(() => {
-    fetchCategories();
+    api.get("/categories").then((res) => setCategories(res.data));
   }, []);
 
   const openCreateModal = () => {

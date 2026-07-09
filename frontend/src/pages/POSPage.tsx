@@ -3,14 +3,16 @@ import { Minus, Plus, Search, ShoppingCart, Trash2 } from "lucide-react";
 import { api } from "../services/api";
 import type { Product } from "../types/product.types";
 import type { Customer } from "../types/customer.types";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../context/useCart";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input, Select } from "../components/ui/Input";
 import { Badge } from "../components/ui/Badge";
 import { ReceiptModal } from "../components/ReceiptModal";
+import { useAuthStore } from "../store/authStore";
 
 export default function POSPage() {
+  const user = useAuthStore((state) => state.user);
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState("");
@@ -39,7 +41,7 @@ export default function POSPage() {
   };
 
   useEffect(() => {
-    fetchProducts();
+    api.get("/products").then((res) => setProducts(res.data));
     api.get("/customers").then((res) => setCustomers(res.data));
     api.get("/cash-register/active").then((res) => {
       if (res.data) setCashRegisterId(res.data.id);
@@ -57,7 +59,7 @@ export default function POSPage() {
 
     try {
       const res = await api.post("/sales", {
-        user_id: 1,
+        user_id: user?.id,
         customer_id: customerId || null,
         cash_register_id: cashRegisterId,
         payment_method: paymentMethod,

@@ -8,6 +8,7 @@ import { PageHeader } from "./ui/PageHeader";
 import { Card } from "./ui/Card";
 import { Button } from "./ui/Button";
 import { Input, Select } from "./ui/Input";
+import { useAuthStore } from "../store/authStore";
 
 interface InventoryMovementViewProps {
   type: MovementType;
@@ -31,6 +32,7 @@ const config = {
 };
 
 export function InventoryMovementView({ type }: InventoryMovementViewProps) {
+  const user = useAuthStore((state) => state.user);
   const [products, setProducts] = useState<Product[]>([]);
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
   const [productId, setProductId] = useState("");
@@ -47,7 +49,7 @@ export function InventoryMovementView({ type }: InventoryMovementViewProps) {
 
   useEffect(() => {
     api.get("/products").then((res) => setProducts(res.data));
-    fetchMovements();
+    api.get(`/inventory?type=${type}`).then((res) => setMovements(res.data));
   }, [type]);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -59,7 +61,7 @@ export function InventoryMovementView({ type }: InventoryMovementViewProps) {
     try {
       await api.post("/inventory", {
         product_id: Number(productId),
-        user_id: 1,
+        user_id: user?.id,
         type,
         quantity: Number(quantity),
         reason,

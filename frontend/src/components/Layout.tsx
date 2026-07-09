@@ -2,20 +2,18 @@ import { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { Sidebar } from "./layout/Sidebar";
 import { Topbar } from "./layout/Topbar";
+import { useAuthStore } from "../store/authStore";
 
 export default function Layout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const navigate = useNavigate();
 
-  const userName = localStorage.getItem("userName") || "Administrador";
-  const userRole = localStorage.getItem("userRole") || "admin";
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("userName");
-    localStorage.removeItem("userRole");
-    navigate("/");
+    logout();
+    navigate("/login");
   };
 
   return (
@@ -31,8 +29,8 @@ export default function Layout() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
-          userName={userName}
-          userRole={userRole}
+          userName={user?.name || ""}
+          userRole={user?.role || ""}
           onLogout={handleLogout}
           onMenuClick={() => setMobileNavOpen(true)}
         />

@@ -23,7 +23,7 @@ export default function CustomersPage() {
   };
 
   useEffect(() => {
-    fetchCustomers();
+    api.get("/customers").then((res) => setCustomers(res.data));
   }, []);
 
   const openCreateModal = () => {

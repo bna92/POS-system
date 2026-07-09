@@ -23,7 +23,7 @@ export default function SuppliersPage() {
   };
 
   useEffect(() => {
-    fetchSuppliers();
+    api.get("/suppliers").then((res) => setSuppliers(res.data));
   }, []);
 
   const openCreateModal = () => {

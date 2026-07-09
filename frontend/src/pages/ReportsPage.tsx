@@ -7,6 +7,7 @@ import { PageHeader } from "../components/ui/PageHeader";
 import { Card, CardBody, CardHeader, CardTitle } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
+import type { ChartTooltipProps } from "../types/chart.types";
 
 const SERIES_COLOR = "#4f46e5";
 
@@ -14,7 +15,10 @@ function toDateInput(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-function ChartTooltip({ active, payload, label }: any) {
+const defaultFrom = toDateInput(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000));
+const defaultTo = toDateInput(new Date());
+
+function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
 
   return (
@@ -29,8 +33,8 @@ function ChartTooltip({ active, payload, label }: any) {
 
 export default function ReportsPage() {
   const [sales, setSales] = useState<Sale[]>([]);
-  const [from, setFrom] = useState(toDateInput(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000)));
-  const [to, setTo] = useState(toDateInput(new Date()));
+  const [from, setFrom] = useState(defaultFrom);
+  const [to, setTo] = useState(defaultTo);
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {

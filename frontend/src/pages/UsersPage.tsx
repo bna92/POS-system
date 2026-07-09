@@ -30,7 +30,7 @@ export default function UsersPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    api.get("/users").then((res) => setUsers(res.data));
   }, []);
 
   const openCreateModal = () => {

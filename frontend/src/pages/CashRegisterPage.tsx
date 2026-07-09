@@ -7,8 +7,10 @@ import { Card, CardBody, CardHeader, CardTitle } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Badge } from "../components/ui/Badge";
+import { useAuthStore } from "../store/authStore";
 
 export default function CashRegisterPage() {
+  const user = useAuthStore((state) => state.user);
   const [activeSession, setActiveSession] = useState<CashSession | null>(null);
   const [history, setHistory] = useState<CashSession[]>([]);
   const [openingAmount, setOpeningAmount] = useState("");
@@ -25,13 +27,18 @@ export default function CashRegisterPage() {
   };
 
   useEffect(() => {
-    fetchAll();
+    Promise.all([api.get("/cash-register/active"), api.get("/cash-register/history")]).then(
+      ([activeRes, historyRes]) => {
+        setActiveSession(activeRes.data);
+        setHistory(historyRes.data);
+      }
+    );
   }, []);
 
   const handleOpen = async () => {
     setSubmitting(true);
     try {
-      await api.post("/cash-register/open", { user_id: 1, opening_amount: Number(openingAmount || 0) });
+      await api.post("/cash-register/open", { user_id: user?.id, opening_amount: Number(openingAmount || 0) });
       setOpeningAmount("");
       fetchAll();
     } finally {

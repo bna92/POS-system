@@ -5,6 +5,7 @@ import type { SaleReceipt } from "../types/sale.types";
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
 import { openReceiptWindow } from "../lib/printReceipt";
+import { getErrorMessage } from "../lib/getErrorMessage";
 
 const paymentLabels: Record<string, string> = {
   cash: "Efectivo",
@@ -22,13 +23,12 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
   const [printStatus, setPrintStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!saleId) {
-      setReceipt(null);
-      setPrintStatus(null);
-      return;
-    }
+    if (!saleId) return;
 
-    api.get(`/sales/${saleId}/receipt`).then((res) => setReceipt(res.data));
+    api.get(`/sales/${saleId}/receipt`).then((res) => {
+      setReceipt(res.data);
+      setPrintStatus(null);
+    });
   }, [saleId]);
 
   const handleThermalPrint = async () => {
@@ -38,8 +38,8 @@ export function ReceiptModal({ saleId, onClose }: ReceiptModalProps) {
     try {
       const res = await api.post(`/sales/${saleId}/print`);
       setPrintStatus(res.data.message);
-    } catch (err: any) {
-      setPrintStatus(err?.response?.data?.message || "No se pudo imprimir el ticket");
+    } catch (err) {
+      setPrintStatus(getErrorMessage(err, "No se pudo imprimir el ticket"));
     }
   };
 

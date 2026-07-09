@@ -34,14 +34,9 @@ export default function ProductsPage() {
     setProducts(res.data);
   };
 
-  const fetchCategories = async () => {
-    const res = await api.get("/categories");
-    setCategories(res.data);
-  };
-
   useEffect(() => {
-    fetchProducts();
-    fetchCategories();
+    api.get("/products").then((res) => setProducts(res.data));
+    api.get("/categories").then((res) => setCategories(res.data));
   }, []);
 
   const openCreateModal = () => {

@@ -14,6 +14,7 @@ import { PageHeader } from "../components/ui/PageHeader";
 import { Card, CardBody, CardHeader, CardTitle } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import type { DailySummary, LowStockProduct, SalesTrendPoint, TopProduct } from "../types/dashboard.types";
+import type { ChartTooltipProps } from "../types/chart.types";
 
 const SERIES_COLOR = "#4f46e5";
 
@@ -49,8 +50,8 @@ function StatTile({
   );
 }
 
-function ChartTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
+function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
+  if (!active || !payload?.length || !label) return null;
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-md">

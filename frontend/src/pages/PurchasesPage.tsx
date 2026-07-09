@@ -9,8 +9,10 @@ import { Card, CardBody, CardHeader, CardTitle } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input, Select } from "../components/ui/Input";
 import { Modal } from "../components/ui/Modal";
+import { useAuthStore } from "../store/authStore";
 
 export default function PurchasesPage() {
+  const user = useAuthStore((state) => state.user);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -30,7 +32,7 @@ export default function PurchasesPage() {
   };
 
   useEffect(() => {
-    fetchPurchases();
+    api.get("/purchases").then((res) => setPurchases(res.data));
     api.get("/products").then((res) => setProducts(res.data));
     api.get("/suppliers").then((res) => setSuppliers(res.data));
   }, []);
@@ -74,7 +76,7 @@ export default function PurchasesPage() {
     try {
       await api.post("/purchases", {
         supplier_id: Number(supplierId),
-        user_id: 1,
+        user_id: user?.id,
         total,
         items,
       });
