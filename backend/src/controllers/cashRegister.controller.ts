@@ -4,9 +4,9 @@ import { pool } from "../config/db";
 export const getActiveSession = async (_req: Request, res: Response) => {
   try {
     const [rows]: any = await pool.query(
-      `SELECT cash_sessions.*, users.name AS user_name
-       FROM cash_sessions
-       LEFT JOIN users ON cash_sessions.user_id = users.id
+      `SELECT cash_registers.*, users.name AS user_name
+       FROM cash_registers
+       LEFT JOIN users ON cash_registers.user_id = users.id
        WHERE status = 'open'
        ORDER BY opened_at DESC
        LIMIT 1`
@@ -22,7 +22,7 @@ export const getActiveSession = async (_req: Request, res: Response) => {
       `SELECT COUNT(*) AS total_sales, IFNULL(SUM(total), 0) AS total_income,
         IFNULL(SUM(CASE WHEN payment_method = 'cash' THEN total ELSE 0 END), 0) AS cash_income
        FROM sales
-       WHERE cash_session_id = ?`,
+       WHERE cash_register_id = ?`,
       [session.id]
     );
 
@@ -37,7 +37,7 @@ export const openSession = async (req: Request, res: Response) => {
     const { user_id, opening_amount } = req.body;
 
     const [existing]: any = await pool.query(
-      "SELECT id FROM cash_sessions WHERE status = 'open' LIMIT 1"
+      "SELECT id FROM cash_registers WHERE status = 'open' LIMIT 1"
     );
 
     if (existing.length > 0) {
@@ -45,7 +45,7 @@ export const openSession = async (req: Request, res: Response) => {
     }
 
     const [result]: any = await pool.query(
-      "INSERT INTO cash_sessions (user_id, opening_amount) VALUES (?, ?)",
+      "INSERT INTO cash_registers (user_id, opening_amount) VALUES (?, ?)",
       [user_id, opening_amount]
     );
 
@@ -60,7 +60,7 @@ export const closeSession = async (req: Request, res: Response) => {
     const { closing_amount } = req.body;
 
     const [rows]: any = await pool.query(
-      "SELECT * FROM cash_sessions WHERE id = ? AND status = 'open'",
+      "SELECT * FROM cash_registers WHERE id = ? AND status = 'open'",
       [req.params.id]
     );
 
@@ -73,7 +73,7 @@ export const closeSession = async (req: Request, res: Response) => {
     const [salesSummary]: any = await pool.query(
       `SELECT IFNULL(SUM(CASE WHEN payment_method = 'cash' THEN total ELSE 0 END), 0) AS cash_income
        FROM sales
-       WHERE cash_session_id = ?`,
+       WHERE cash_register_id = ?`,
       [session.id]
     );
 
@@ -82,8 +82,8 @@ export const closeSession = async (req: Request, res: Response) => {
     const difference = Number(closing_amount) - expectedAmount;
 
     await pool.query(
-      `UPDATE cash_sessions
-       SET closing_amount = ?, expected_amount = ?, difference = ?, status = 'closed', closed_at = NOW()
+      `UPDATE cash_registers
+       SET closing_amount = ?, expected_amount = ?, difference_amount = ?, status = 'closed', closed_at = NOW()
        WHERE id = ?`,
       [closing_amount, expectedAmount, difference, session.id]
     );
@@ -97,9 +97,9 @@ export const closeSession = async (req: Request, res: Response) => {
 export const getSessionHistory = async (_req: Request, res: Response) => {
   try {
     const [rows] = await pool.query(
-      `SELECT cash_sessions.*, users.name AS user_name
-       FROM cash_sessions
-       LEFT JOIN users ON cash_sessions.user_id = users.id
+      `SELECT cash_registers.*, users.name AS user_name
+       FROM cash_registers
+       LEFT JOIN users ON cash_registers.user_id = users.id
        ORDER BY opened_at DESC`
     );
 

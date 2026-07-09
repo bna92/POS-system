@@ -11,7 +11,7 @@ export const createSale = async (req: Request, res: Response) => {
     const {
       user_id,
       customer_id,
-      cash_session_id,
+      cash_register_id,
       items,
       payment_method,
       cash_received,
@@ -21,12 +21,13 @@ export const createSale = async (req: Request, res: Response) => {
 
     const [saleResult]: any = await connection.query(
       `INSERT INTO sales
-      (user_id, customer_id, cash_session_id, total, payment_method, cash_received, change_amount)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      (user_id, customer_id, cash_register_id, subtotal, total, payment_method, cash_received, change_amount)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         user_id,
         customer_id || null,
-        cash_session_id || null,
+        cash_register_id || null,
+        total,
         total,
         payment_method,
         cash_received,
@@ -36,17 +37,22 @@ export const createSale = async (req: Request, res: Response) => {
 
     const saleId = saleResult.insertId;
 
+    await connection.query(
+      "UPDATE sales SET folio = ? WHERE id = ?",
+      [`V-${String(saleId).padStart(6, "0")}`, saleId]
+    );
+
     for (const item of items) {
       await connection.query(
-        `INSERT INTO sale_items 
+        `INSERT INTO sale_details
         (sale_id, product_id, quantity, price, subtotal)
         VALUES (?, ?, ?, ?, ?)`,
         [saleId, item.product_id, item.quantity, item.price, item.subtotal]
       );
 
       await connection.query(
-        `UPDATE products 
-         SET stock = stock - ? 
+        `UPDATE products
+         SET stock = stock - ?
          WHERE id = ?`,
         [item.quantity, item.product_id]
       );
@@ -69,11 +75,13 @@ export const createSale = async (req: Request, res: Response) => {
 export const getSales = async (_req: Request, res: Response) => {
   try {
     const [rows] = await pool.query(`
-      SELECT 
+      SELECT
         sales.*,
-        users.name AS cashier_name
+        users.name AS cashier_name,
+        customers.name AS customer_name
       FROM sales
       LEFT JOIN users ON sales.user_id = users.id
+      LEFT JOIN customers ON sales.customer_id = customers.id
       ORDER BY sales.created_at DESC
     `);
 
@@ -98,9 +106,9 @@ async function fetchReceiptData(saleId: string) {
   }
 
   const [items] = await pool.query(
-    `SELECT sale_items.*, products.name AS product_name
-     FROM sale_items
-     LEFT JOIN products ON sale_items.product_id = products.id
+    `SELECT sale_details.*, products.name AS product_name
+     FROM sale_details
+     LEFT JOIN products ON sale_details.product_id = products.id
      WHERE sale_id = ?`,
     [saleId]
   );
@@ -143,11 +151,11 @@ export const printSaleReceipt = async (req: Request, res: Response) => {
 export const getDailySummary = async (_req: Request, res: Response) => {
   try {
     const [rows]: any = await pool.query(`
-      SELECT 
+      SELECT
         COUNT(*) AS total_sales,
         IFNULL(SUM(total), 0) AS total_income
       FROM sales
-      WHERE DATE(created_at) = CURDATE()
+      WHERE DATE(created_at) = CURDATE() AND status = 'completed'
     `);
 
     res.json(rows[0]);

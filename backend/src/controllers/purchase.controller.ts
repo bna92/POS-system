@@ -18,7 +18,7 @@ export const createPurchase = async (req: Request, res: Response) => {
 
     for (const item of items) {
       await connection.query(
-        `INSERT INTO purchase_items (purchase_id, product_id, quantity, cost, subtotal)
+        `INSERT INTO purchase_details (purchase_id, product_id, quantity, cost, subtotal)
          VALUES (?, ?, ?, ?, ?)`,
         [purchaseId, item.product_id, item.quantity, item.cost, item.subtotal]
       );
@@ -78,9 +78,9 @@ export const getPurchaseById = async (req: Request, res: Response) => {
     }
 
     const [items] = await pool.query(
-      `SELECT purchase_items.*, products.name AS product_name
-       FROM purchase_items
-       LEFT JOIN products ON purchase_items.product_id = products.id
+      `SELECT purchase_details.*, products.name AS product_name
+       FROM purchase_details
+       LEFT JOIN products ON purchase_details.product_id = products.id
        WHERE purchase_id = ?`,
       [req.params.id]
     );

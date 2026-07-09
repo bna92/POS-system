@@ -7,6 +7,7 @@ export interface Product {
   price: number;
   cost: number;
   stock: number;
+  min_stock: number;
   image_url?: string;
   active: boolean;
 }

@@ -15,12 +15,11 @@ export const getSuppliers = async (_req: Request, res: Response) => {
 
 export const createSupplier = async (req: Request, res: Response) => {
   try {
-    const { name, contact_name, phone, email, address } = req.body;
+    const { name, phone, email, address } = req.body;
 
     await pool.query(
-      `INSERT INTO suppliers (name, contact_name, phone, email, address)
-       VALUES (?, ?, ?, ?, ?)`,
-      [name, contact_name || null, phone || null, email || null, address || null]
+      `INSERT INTO suppliers (name, phone, email, address) VALUES (?, ?, ?, ?)`,
+      [name, phone || null, email || null, address || null]
     );
 
     res.status(201).json({ message: "Proveedor creado correctamente" });
@@ -31,20 +30,11 @@ export const createSupplier = async (req: Request, res: Response) => {
 
 export const updateSupplier = async (req: Request, res: Response) => {
   try {
-    const { name, contact_name, phone, email, address } = req.body;
+    const { name, phone, email, address } = req.body;
 
     await pool.query(
-      `UPDATE suppliers
-       SET name = ?, contact_name = ?, phone = ?, email = ?, address = ?
-       WHERE id = ?`,
-      [
-        name,
-        contact_name || null,
-        phone || null,
-        email || null,
-        address || null,
-        req.params.id,
-      ]
+      `UPDATE suppliers SET name = ?, phone = ?, email = ?, address = ? WHERE id = ?`,
+      [name, phone || null, email || null, address || null, req.params.id]
     );
 
     res.json({ message: "Proveedor actualizado correctamente" });

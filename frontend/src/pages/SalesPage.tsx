@@ -1,69 +1,102 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Receipt } from "lucide-react";
 import { api } from "../services/api";
+import type { Sale } from "../types/sale.types";
+import { PageHeader } from "../components/ui/PageHeader";
+import { Card } from "../components/ui/Card";
+import { Select } from "../components/ui/Input";
+import { Badge } from "../components/ui/Badge";
+import { ReceiptModal } from "../components/ReceiptModal";
 
-interface Sale {
-  id: number;
-  cashier_name: string;
-  total: number;
-  payment_method: string;
-  created_at: string;
-}
+const paymentLabels: Record<string, string> = {
+  cash: "Efectivo",
+  card: "Tarjeta",
+  transfer: "Transferencia",
+};
 
 export default function SalesPage() {
   const [sales, setSales] = useState<Sale[]>([]);
+  const [paymentFilter, setPaymentFilter] = useState("all");
+  const [selectedSaleId, setSelectedSaleId] = useState<number | null>(null);
 
   useEffect(() => {
     api.get("/sales").then((res) => setSales(res.data));
   }, []);
 
+  const filteredSales = useMemo(() => {
+    if (paymentFilter === "all") return sales;
+    return sales.filter((s) => s.payment_method === paymentFilter);
+  }, [sales, paymentFilter]);
+
   return (
-    <div className="bg-white text-black">
-      <div className="bg-gray-700 px-3 py-2 text-lg font-bold text-white">
-        HISTORIAL DE VENTAS
-      </div>
+    <div>
+      <PageHeader title="Historial de ventas" subtitle="Todas las ventas registradas en el sistema" />
 
-      <div className="border-b border-gray-400 bg-gray-100 px-3 py-2 text-sm font-semibold">
-        Ventas registradas en el sistema
-      </div>
+      <Card>
+        <div className="flex items-center gap-3 border-b border-slate-100 p-4">
+          <Select
+            value={paymentFilter}
+            onChange={(e) => setPaymentFilter(e.target.value)}
+            className="w-48"
+          >
+            <option value="all">Todos los pagos</option>
+            <option value="cash">Efectivo</option>
+            <option value="card">Tarjeta</option>
+            <option value="transfer">Transferencia</option>
+          </Select>
+        </div>
 
-      <div className="p-3">
-        <table className="w-full border-collapse text-sm">
-          <thead className="bg-blue-700 text-white">
-            <tr>
-              <th className="border border-gray-400 p-2 text-left">Folio</th>
-              <th className="border border-gray-400 p-2 text-left">Cajero</th>
-              <th className="border border-gray-400 p-2 text-left">Pago</th>
-              <th className="border border-gray-400 p-2 text-right">Total</th>
-              <th className="border border-gray-400 p-2 text-left">Fecha</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {sales.map((sale, index) => (
-              <tr
-                key={sale.id}
-                className={index % 2 === 0 ? "bg-white" : "bg-gray-100"}
-              >
-                <td className="border border-gray-300 p-2 font-bold">
-                  #{sale.id}
-                </td>
-                <td className="border border-gray-300 p-2">
-                  {sale.cashier_name || "N/A"}
-                </td>
-                <td className="border border-gray-300 p-2">
-                  {sale.payment_method}
-                </td>
-                <td className="border border-gray-300 p-2 text-right font-bold">
-                  ${Number(sale.total).toFixed(2)}
-                </td>
-                <td className="border border-gray-300 p-2">
-                  {new Date(sale.created_at).toLocaleString()}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <th className="px-5 py-3">Folio</th>
+                <th className="px-5 py-3">Cajero</th>
+                <th className="px-5 py-3">Cliente</th>
+                <th className="px-5 py-3">Pago</th>
+                <th className="px-5 py-3 text-right">Total</th>
+                <th className="px-5 py-3">Fecha</th>
+                <th className="px-5 py-3 text-right">Ticket</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+
+            <tbody>
+              {filteredSales.map((sale) => (
+                <tr key={sale.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50">
+                  <td className="px-5 py-3 font-medium text-slate-800">#{sale.id}</td>
+                  <td className="px-5 py-3 text-slate-600">{sale.cashier_name || "N/A"}</td>
+                  <td className="px-5 py-3 text-slate-600">{sale.customer_name || "Público en general"}</td>
+                  <td className="px-5 py-3">
+                    <Badge tone="indigo">{paymentLabels[sale.payment_method] || sale.payment_method}</Badge>
+                  </td>
+                  <td className="px-5 py-3 text-right font-semibold text-slate-800">
+                    ${Number(sale.total).toFixed(2)}
+                  </td>
+                  <td className="px-5 py-3 text-slate-500">{new Date(sale.created_at).toLocaleString()}</td>
+                  <td className="px-5 py-3 text-right">
+                    <button
+                      onClick={() => setSelectedSaleId(sale.id)}
+                      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-slate-400 hover:bg-slate-100 hover:text-indigo-600"
+                    >
+                      <Receipt className="h-4 w-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+
+              {filteredSales.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-400">
+                    No hay ventas para mostrar.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      <ReceiptModal saleId={selectedSaleId} onClose={() => setSelectedSaleId(null)} />
     </div>
   );
 }

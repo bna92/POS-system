@@ -5,7 +5,10 @@ import { pool } from "../config/db";
 export const getUsers = async (_req: Request, res: Response) => {
   try {
     const [rows] = await pool.query(
-      "SELECT id, name, email, role, active, created_at FROM users ORDER BY name ASC"
+      `SELECT users.id, users.name, users.email, roles.name AS role, users.active, users.created_at
+       FROM users
+       LEFT JOIN roles ON users.role_id = roles.id
+       ORDER BY users.name ASC`
     );
 
     res.json(rows);
@@ -21,7 +24,8 @@ export const createUser = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await pool.query(
-      "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
+      `INSERT INTO users (name, email, password, role_id)
+       SELECT ?, ?, ?, id FROM roles WHERE name = ?`,
       [name, email, hashedPassword, role || "cashier"]
     );
 
@@ -39,12 +43,16 @@ export const updateUser = async (req: Request, res: Response) => {
       const hashedPassword = await bcrypt.hash(password, 10);
 
       await pool.query(
-        "UPDATE users SET name = ?, email = ?, role = ?, password = ? WHERE id = ?",
+        `UPDATE users
+         SET name = ?, email = ?, role_id = (SELECT id FROM roles WHERE name = ?), password = ?
+         WHERE id = ?`,
         [name, email, role, hashedPassword, req.params.id]
       );
     } else {
       await pool.query(
-        "UPDATE users SET name = ?, email = ?, role = ? WHERE id = ?",
+        `UPDATE users
+         SET name = ?, email = ?, role_id = (SELECT id FROM roles WHERE name = ?)
+         WHERE id = ?`,
         [name, email, role, req.params.id]
       );
     }

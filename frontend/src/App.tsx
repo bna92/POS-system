@@ -12,6 +12,7 @@ import PurchasesPage from "./pages/PurchasesPage";
 import InventoryInPage from "./pages/InventoryInPage";
 import InventoryOutPage from "./pages/InventoryOutPage";
 import CashRegisterPage from "./pages/CashRegisterPage";
+import ReportsPage from "./pages/ReportsPage";
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="/entrada-inventario" element={<InventoryInPage />} />
         <Route path="/salida-inventario" element={<InventoryOutPage />} />
         <Route path="/caja" element={<CashRegisterPage />} />
+        <Route path="/reportes" element={<ReportsPage />} />
       </Route>
     </Routes>
   );

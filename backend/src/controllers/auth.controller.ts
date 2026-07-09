@@ -10,7 +10,8 @@ export const register = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await pool.query(
-      "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
+      `INSERT INTO users (name, email, password, role_id)
+       SELECT ?, ?, ?, id FROM roles WHERE name = ?`,
       [name, email, hashedPassword, role || "cashier"]
     );
 
@@ -24,15 +25,23 @@ export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    const [rows]: any = await pool.query("SELECT * FROM users WHERE email = ?", [
-      email,
-    ]);
+    const [rows]: any = await pool.query(
+      `SELECT users.*, roles.name AS role
+       FROM users
+       LEFT JOIN roles ON users.role_id = roles.id
+       WHERE users.email = ?`,
+      [email]
+    );
 
     if (rows.length === 0) {
       return res.status(401).json({ message: "Credenciales incorrectas" });
     }
 
     const user = rows[0];
+
+    if (!user.active) {
+      return res.status(401).json({ message: "Usuario desactivado" });
+    }
 
     const validPassword = await bcrypt.compare(password, user.password);
 

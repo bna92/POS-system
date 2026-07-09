@@ -15,12 +15,11 @@ export const getCustomers = async (_req: Request, res: Response) => {
 
 export const createCustomer = async (req: Request, res: Response) => {
   try {
-    const { name, phone, email, tax_id, address } = req.body;
+    const { name, phone, email } = req.body;
 
     await pool.query(
-      `INSERT INTO customers (name, phone, email, tax_id, address)
-       VALUES (?, ?, ?, ?, ?)`,
-      [name, phone || null, email || null, tax_id || null, address || null]
+      `INSERT INTO customers (name, phone, email) VALUES (?, ?, ?)`,
+      [name, phone || null, email || null]
     );
 
     res.status(201).json({ message: "Cliente creado correctamente" });
@@ -31,13 +30,11 @@ export const createCustomer = async (req: Request, res: Response) => {
 
 export const updateCustomer = async (req: Request, res: Response) => {
   try {
-    const { name, phone, email, tax_id, address } = req.body;
+    const { name, phone, email } = req.body;
 
     await pool.query(
-      `UPDATE customers
-       SET name = ?, phone = ?, email = ?, tax_id = ?, address = ?
-       WHERE id = ?`,
-      [name, phone || null, email || null, tax_id || null, address || null, req.params.id]
+      `UPDATE customers SET name = ?, phone = ?, email = ? WHERE id = ?`,
+      [name, phone || null, email || null, req.params.id]
     );
 
     res.json({ message: "Cliente actualizado correctamente" });

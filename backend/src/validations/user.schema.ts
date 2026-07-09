@@ -4,12 +4,12 @@ export const createUserSchema = z.object({
   name: z.string().min(2, "El nombre es muy corto"),
   email: z.email("Email inválido"),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
-  role: z.enum(["admin", "cashier"]).optional(),
+  role: z.enum(["admin", "cashier", "supervisor"]).optional(),
 });
 
 export const updateUserSchema = z.object({
   name: z.string().min(2, "El nombre es muy corto"),
   email: z.email("Email inválido"),
-  role: z.enum(["admin", "cashier"]),
+  role: z.enum(["admin", "cashier", "supervisor"]),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").optional(),
 });

@@ -25,10 +25,10 @@ export const getTopProducts = async (req: Request, res: Response) => {
     const limit = Number(req.query.limit) || 5;
 
     const [rows] = await pool.query(
-      `SELECT products.id, products.name, SUM(sale_items.quantity) AS units_sold,
-        SUM(sale_items.subtotal) AS total_income
-       FROM sale_items
-       LEFT JOIN products ON sale_items.product_id = products.id
+      `SELECT products.id, products.name, SUM(sale_details.quantity) AS units_sold,
+        SUM(sale_details.subtotal) AS total_income
+       FROM sale_details
+       LEFT JOIN products ON sale_details.product_id = products.id
        GROUP BY products.id, products.name
        ORDER BY units_sold DESC
        LIMIT ?`,
