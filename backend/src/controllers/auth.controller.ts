@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import { pool } from "../config/db";
+import { generateToken } from "../utils/generateToken";
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -40,11 +40,11 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Credenciales incorrectas" });
     }
 
-    const token = jwt.sign(
-      { id: user.id, role: user.role, name: user.name },
-      process.env.JWT_SECRET as string,
-      { expiresIn: "8h" }
-    );
+    const token = generateToken({
+      id: user.id,
+      role: user.role,
+      name: user.name,
+    });
 
     res.json({
       token,

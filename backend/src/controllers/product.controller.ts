@@ -37,13 +37,13 @@ export const getProductById = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const { name, barcode, category_id, price, cost, stock, image_url } = req.body;
+    const { name, barcode, category_id, price, cost, stock, min_stock, image_url } = req.body;
 
     await pool.query(
-      `INSERT INTO products 
-      (name, barcode, category_id, price, cost, stock, image_url) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [name, barcode, category_id, price, cost, stock, image_url]
+      `INSERT INTO products
+      (name, barcode, category_id, price, cost, stock, min_stock, image_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name, barcode || null, category_id || null, price, cost, stock, min_stock ?? 5, image_url || null]
     );
 
     res.status(201).json({ message: "Producto creado correctamente" });
@@ -54,13 +54,13 @@ export const createProduct = async (req: Request, res: Response) => {
 
 export const updateProduct = async (req: Request, res: Response) => {
   try {
-    const { name, barcode, category_id, price, cost, stock, image_url } = req.body;
+    const { name, barcode, category_id, price, cost, stock, min_stock, image_url } = req.body;
 
     await pool.query(
-      `UPDATE products 
-       SET name = ?, barcode = ?, category_id = ?, price = ?, cost = ?, stock = ?, image_url = ?
+      `UPDATE products
+       SET name = ?, barcode = ?, category_id = ?, price = ?, cost = ?, stock = ?, min_stock = ?, image_url = ?
        WHERE id = ?`,
-      [name, barcode, category_id, price, cost, stock, image_url, req.params.id]
+      [name, barcode || null, category_id || null, price, cost, stock, min_stock ?? 5, image_url || null, req.params.id]
     );
 
     res.json({ message: "Producto actualizado correctamente" });

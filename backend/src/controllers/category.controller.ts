@@ -21,3 +21,28 @@ export const createCategory = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error al crear categoría", error });
   }
 };
+
+export const updateCategory = async (req: Request, res: Response) => {
+  try {
+    const { name } = req.body;
+
+    await pool.query("UPDATE categories SET name = ? WHERE id = ?", [
+      name,
+      req.params.id,
+    ]);
+
+    res.json({ message: "Categoría actualizada correctamente" });
+  } catch (error) {
+    res.status(500).json({ message: "Error al actualizar categoría", error });
+  }
+};
+
+export const deleteCategory = async (req: Request, res: Response) => {
+  try {
+    await pool.query("DELETE FROM categories WHERE id = ?", [req.params.id]);
+
+    res.json({ message: "Categoría eliminada correctamente" });
+  } catch (error) {
+    res.status(500).json({ message: "Error al eliminar categoría", error });
+  }
+};

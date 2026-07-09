@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { pool } from "../config/db";
+import { printReceipt } from "../utils/ticketPrinter";
 
 export const createSale = async (req: Request, res: Response) => {
   const connection = await pool.getConnection();
@@ -9,6 +10,8 @@ export const createSale = async (req: Request, res: Response) => {
 
     const {
       user_id,
+      customer_id,
+      cash_session_id,
       items,
       payment_method,
       cash_received,
@@ -17,10 +20,18 @@ export const createSale = async (req: Request, res: Response) => {
     } = req.body;
 
     const [saleResult]: any = await connection.query(
-      `INSERT INTO sales 
-      (user_id, total, payment_method, cash_received, change_amount)
-      VALUES (?, ?, ?, ?, ?)`,
-      [user_id, total, payment_method, cash_received, change_amount]
+      `INSERT INTO sales
+      (user_id, customer_id, cash_session_id, total, payment_method, cash_received, change_amount)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        user_id,
+        customer_id || null,
+        cash_session_id || null,
+        total,
+        payment_method,
+        cash_received,
+        change_amount,
+      ]
     );
 
     const saleId = saleResult.insertId;
@@ -69,6 +80,63 @@ export const getSales = async (_req: Request, res: Response) => {
     res.json(rows);
   } catch (error) {
     res.status(500).json({ message: "Error al obtener ventas", error });
+  }
+};
+
+async function fetchReceiptData(saleId: string) {
+  const [saleRows]: any = await pool.query(
+    `SELECT sales.*, users.name AS cashier_name, customers.name AS customer_name
+     FROM sales
+     LEFT JOIN users ON sales.user_id = users.id
+     LEFT JOIN customers ON sales.customer_id = customers.id
+     WHERE sales.id = ?`,
+    [saleId]
+  );
+
+  if (saleRows.length === 0) {
+    return null;
+  }
+
+  const [items] = await pool.query(
+    `SELECT sale_items.*, products.name AS product_name
+     FROM sale_items
+     LEFT JOIN products ON sale_items.product_id = products.id
+     WHERE sale_id = ?`,
+    [saleId]
+  );
+
+  return { ...saleRows[0], items };
+}
+
+export const getSaleReceipt = async (req: Request, res: Response) => {
+  try {
+    const receipt = await fetchReceiptData(String(req.params.id));
+
+    if (!receipt) {
+      return res.status(404).json({ message: "Venta no encontrada" });
+    }
+
+    res.json(receipt);
+  } catch (error) {
+    res.status(500).json({ message: "Error al obtener el recibo", error });
+  }
+};
+
+export const printSaleReceipt = async (req: Request, res: Response) => {
+  try {
+    const receipt = await fetchReceiptData(String(req.params.id));
+
+    if (!receipt) {
+      return res.status(404).json({ message: "Venta no encontrada" });
+    }
+
+    await printReceipt(receipt);
+
+    res.json({ message: "Ticket enviado a la impresora" });
+  } catch (error: any) {
+    res.status(503).json({
+      message: error?.message || "No se pudo imprimir el ticket. Verifica la impresora térmica.",
+    });
   }
 };
 
