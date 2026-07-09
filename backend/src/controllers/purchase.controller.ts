@@ -43,6 +43,47 @@ export const createPurchase = async (req: Request, res: Response) => {
   }
 };
 
+export const deletePurchase = async (req: Request, res: Response) => {
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [purchaseRows]: any = await connection.query("SELECT id FROM purchases WHERE id = ?", [
+      req.params.id,
+    ]);
+
+    if (purchaseRows.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ message: "Compra no encontrada" });
+    }
+
+    const [items]: any = await connection.query(
+      "SELECT product_id, quantity FROM purchase_details WHERE purchase_id = ?",
+      [req.params.id]
+    );
+
+    for (const item of items) {
+      await connection.query("UPDATE products SET stock = stock - ? WHERE id = ?", [
+        item.quantity,
+        item.product_id,
+      ]);
+    }
+
+    await connection.query("DELETE FROM purchase_details WHERE purchase_id = ?", [req.params.id]);
+    await connection.query("DELETE FROM purchases WHERE id = ?", [req.params.id]);
+
+    await connection.commit();
+
+    res.json({ message: "Compra eliminada correctamente" });
+  } catch (error) {
+    await connection.rollback();
+    res.status(500).json({ message: "Error al eliminar compra", error });
+  } finally {
+    connection.release();
+  }
+};
+
 export const getPurchases = async (_req: Request, res: Response) => {
   try {
     const [rows] = await pool.query(`

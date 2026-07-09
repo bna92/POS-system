@@ -13,6 +13,7 @@ import { useAuthStore } from "../store/authStore";
 
 export default function PurchasesPage() {
   const user = useAuthStore((state) => state.user);
+  const isAdmin = user?.role === "admin";
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -92,6 +93,15 @@ export default function PurchasesPage() {
   const openDetail = async (purchase: Purchase) => {
     const res = await api.get(`/purchases/${purchase.id}`);
     setViewingPurchase(res.data);
+  };
+
+  const handleDelete = async (purchase: Purchase) => {
+    if (!confirm(`¿Eliminar la compra #${purchase.id} por $${Number(purchase.total).toFixed(2)}? Esto revierte el stock que agregó.`)) {
+      return;
+    }
+
+    await api.delete(`/purchases/${purchase.id}`);
+    fetchPurchases();
   };
 
   return (
@@ -191,7 +201,7 @@ export default function PurchasesPage() {
                   <th className="px-5 py-3">Registrada por</th>
                   <th className="px-5 py-3 text-right">Total</th>
                   <th className="px-5 py-3">Fecha</th>
-                  <th className="px-5 py-3 text-right">Detalle</th>
+                  <th className="px-5 py-3 text-right">Acciones</th>
                 </tr>
               </thead>
 
@@ -205,13 +215,25 @@ export default function PurchasesPage() {
                       ${Number(purchase.total).toFixed(2)}
                     </td>
                     <td className="px-5 py-3 text-slate-500">{new Date(purchase.created_at).toLocaleString()}</td>
-                    <td className="px-5 py-3 text-right">
-                      <button
-                        onClick={() => openDetail(purchase)}
-                        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-slate-400 hover:bg-slate-100 hover:text-indigo-600"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
+                    <td className="px-5 py-3">
+                      <div className="flex justify-end gap-1">
+                        <button
+                          onClick={() => openDetail(purchase)}
+                          className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600"
+                          title="Ver detalle"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleDelete(purchase)}
+                            className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                            title="Eliminar compra"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -237,7 +259,7 @@ export default function PurchasesPage() {
               {viewingPurchase.items?.map((item, i) => (
                 <div key={i} className="flex justify-between px-3 py-2 text-sm">
                   <span>{item.quantity} x {item.product_name}</span>
-                  <span>${item.subtotal.toFixed(2)}</span>
+                  <span>${Number(item.subtotal).toFixed(2)}</span>
                 </div>
               ))}
             </div>
