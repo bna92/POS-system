@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Receipt } from "lucide-react";
+import { Receipt, Trash2 } from "lucide-react";
 import { api } from "../services/api";
 import type { Sale } from "../types/sale.types";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -7,6 +7,7 @@ import { Card } from "../components/ui/Card";
 import { Select } from "../components/ui/Input";
 import { Badge } from "../components/ui/Badge";
 import { ReceiptModal } from "../components/ReceiptModal";
+import { useAuthStore } from "../store/authStore";
 
 const paymentLabels: Record<string, string> = {
   cash: "Efectivo",
@@ -15,18 +16,32 @@ const paymentLabels: Record<string, string> = {
 };
 
 export default function SalesPage() {
+  const isAdmin = useAuthStore((state) => state.user?.role === "admin");
   const [sales, setSales] = useState<Sale[]>([]);
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [selectedSaleId, setSelectedSaleId] = useState<number | null>(null);
 
-  useEffect(() => {
+  const fetchSales = () => {
     api.get("/sales").then((res) => setSales(res.data));
+  };
+
+  useEffect(() => {
+    fetchSales();
   }, []);
 
   const filteredSales = useMemo(() => {
     if (paymentFilter === "all") return sales;
     return sales.filter((s) => s.payment_method === paymentFilter);
   }, [sales, paymentFilter]);
+
+  const handleDelete = async (sale: Sale) => {
+    if (!confirm(`¿Eliminar la venta ${sale.folio || `#${sale.id}`} por $${Number(sale.total).toFixed(2)}? Esto restaura el stock vendido.`)) {
+      return;
+    }
+
+    await api.delete(`/sales/${sale.id}`);
+    fetchSales();
+  };
 
   return (
     <div>
@@ -56,14 +71,14 @@ export default function SalesPage() {
                 <th className="px-5 py-3">Pago</th>
                 <th className="px-5 py-3 text-right">Total</th>
                 <th className="px-5 py-3">Fecha</th>
-                <th className="px-5 py-3 text-right">Ticket</th>
+                <th className="px-5 py-3 text-right">Acciones</th>
               </tr>
             </thead>
 
             <tbody>
               {filteredSales.map((sale) => (
                 <tr key={sale.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50">
-                  <td className="px-5 py-3 font-medium text-slate-800">#{sale.id}</td>
+                  <td className="px-5 py-3 font-medium text-slate-800">{sale.folio || `#${sale.id}`}</td>
                   <td className="px-5 py-3 text-slate-600">{sale.cashier_name || "N/A"}</td>
                   <td className="px-5 py-3 text-slate-600">{sale.customer_name || "Público en general"}</td>
                   <td className="px-5 py-3">
@@ -73,13 +88,25 @@ export default function SalesPage() {
                     ${Number(sale.total).toFixed(2)}
                   </td>
                   <td className="px-5 py-3 text-slate-500">{new Date(sale.created_at).toLocaleString()}</td>
-                  <td className="px-5 py-3 text-right">
-                    <button
-                      onClick={() => setSelectedSaleId(sale.id)}
-                      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-slate-400 hover:bg-slate-100 hover:text-indigo-600"
-                    >
-                      <Receipt className="h-4 w-4" />
-                    </button>
+                  <td className="px-5 py-3">
+                    <div className="flex justify-end gap-1">
+                      <button
+                        onClick={() => setSelectedSaleId(sale.id)}
+                        className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600"
+                        title="Ver ticket"
+                      >
+                        <Receipt className="h-4 w-4" />
+                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleDelete(sale)}
+                          className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                          title="Eliminar venta"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -148,6 +148,49 @@ export const printSaleReceipt = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteSale = async (req: Request, res: Response) => {
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [items]: any = await connection.query(
+      "SELECT product_id, quantity FROM sale_details WHERE sale_id = ?",
+      [req.params.id]
+    );
+
+    if (items.length === 0) {
+      const [existing]: any = await connection.query("SELECT id FROM sales WHERE id = ?", [
+        req.params.id,
+      ]);
+
+      if (existing.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({ message: "Venta no encontrada" });
+      }
+    }
+
+    for (const item of items) {
+      await connection.query("UPDATE products SET stock = stock + ? WHERE id = ?", [
+        item.quantity,
+        item.product_id,
+      ]);
+    }
+
+    await connection.query("DELETE FROM sale_details WHERE sale_id = ?", [req.params.id]);
+    await connection.query("DELETE FROM sales WHERE id = ?", [req.params.id]);
+
+    await connection.commit();
+
+    res.json({ message: "Venta eliminada correctamente" });
+  } catch (error) {
+    await connection.rollback();
+    res.status(500).json({ message: "Error al eliminar venta", error });
+  } finally {
+    connection.release();
+  }
+};
+
 export const getDailySummary = async (_req: Request, res: Response) => {
   try {
     const [rows]: any = await pool.query(`

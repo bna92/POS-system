@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Wallet } from "lucide-react";
+import { Trash2, Wallet } from "lucide-react";
 import { api } from "../services/api";
 import type { CashSession } from "../types/cashRegister.types";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -11,6 +11,7 @@ import { useAuthStore } from "../store/authStore";
 
 export default function CashRegisterPage() {
   const user = useAuthStore((state) => state.user);
+  const isAdmin = user?.role === "admin";
   const [activeSession, setActiveSession] = useState<CashSession | null>(null);
   const [history, setHistory] = useState<CashSession[]>([]);
   const [openingAmount, setOpeningAmount] = useState("");
@@ -58,6 +59,15 @@ export default function CashRegisterPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleDeleteSession = async (session: CashSession) => {
+    if (!confirm(`¿Eliminar esta sesión de caja (${new Date(session.opened_at).toLocaleString()})? Las ventas asociadas se conservan, solo se desvinculan.`)) {
+      return;
+    }
+
+    await api.delete(`/cash-register/${session.id}`);
+    fetchAll();
   };
 
   return (
@@ -146,6 +156,7 @@ export default function CashRegisterPage() {
                   <th className="px-5 py-3 text-right">Diferencia</th>
                   <th className="px-5 py-3">Estado</th>
                   <th className="px-5 py-3">Apertura</th>
+                  {isAdmin && <th className="px-5 py-3 text-right">Acciones</th>}
                 </tr>
               </thead>
 
@@ -172,12 +183,23 @@ export default function CashRegisterPage() {
                       </Badge>
                     </td>
                     <td className="px-5 py-3 text-slate-500">{new Date(session.opened_at).toLocaleString()}</td>
+                    {isAdmin && (
+                      <td className="px-5 py-3 text-right">
+                        <button
+                          onClick={() => handleDeleteSession(session)}
+                          className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                          title="Eliminar sesión"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
 
                 {history.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-400">
+                    <td colSpan={isAdmin ? 7 : 6} className="px-5 py-10 text-center text-sm text-slate-400">
                       Sin historial de caja.
                     </td>
                   </tr>

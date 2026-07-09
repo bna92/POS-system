@@ -94,6 +94,37 @@ export const closeSession = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteSession = async (req: Request, res: Response) => {
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [rows]: any = await connection.query("SELECT id FROM cash_registers WHERE id = ?", [
+      req.params.id,
+    ]);
+
+    if (rows.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ message: "Sesión de caja no encontrada" });
+    }
+
+    await connection.query("UPDATE sales SET cash_register_id = NULL WHERE cash_register_id = ?", [
+      req.params.id,
+    ]);
+    await connection.query("DELETE FROM cash_registers WHERE id = ?", [req.params.id]);
+
+    await connection.commit();
+
+    res.json({ message: "Sesión de caja eliminada correctamente" });
+  } catch (error) {
+    await connection.rollback();
+    res.status(500).json({ message: "Error al eliminar sesión de caja", error });
+  } finally {
+    connection.release();
+  }
+};
+
 export const getSessionHistory = async (_req: Request, res: Response) => {
   try {
     const [rows] = await pool.query(
