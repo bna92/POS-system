@@ -22,7 +22,13 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = process.env.FRONTEND_URL?.split(",").map((origin) => origin.trim());
+
+app.use(
+  cors({
+    origin: allowedOrigins && allowedOrigins.length > 0 ? allowedOrigins : true,
+  })
+);
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
