@@ -82,7 +82,7 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
           P
         </div>
-        <span className="text-sm font-semibold text-slate-800">POS System</span>
+        <span className="text-sm font-semibold text-slate-800">PUNTO DE VENTA</span>
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5" onClick={onNavigate}>
